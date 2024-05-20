@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
-// @version      0.1
+// @version      0.2
 // @description  Adds some landing statistics
 // @author       GGamerGGuy
 // @match        https://www.geo-fs.com/geofs.php?v=*
@@ -31,7 +31,7 @@ setTimeout((function() {
     window.statsDiv.style.width = 'fit-content';
     window.statsDiv.style.height = 'fit-content';
     window.statsDiv.style.background = 'rgb(48 146 255)';
-    window.statsDiv.style.zIndex = '1';
+    window.statsDiv.style.zIndex = '10000';
     window.statsDiv.style.margin = '30px';
     window.statsDiv.style.paddingLeft = '10px';
     window.statsDiv.style.paddingRight = '10px';
@@ -86,9 +86,9 @@ setTimeout((function() {
             if (geofs.nav.units.NAV1.inRange) {
                 window.isInTDZ = ((geofs.nav.units.NAV1.distance * FEET_TO_METERS) > (0.052902913939976676 * geofs.runways.getNearestRunway([geofs.nav.units.NAV1.navaid.lat,geofs.nav.units.NAV1.navaid.lon,0]).lengthMeters)) && ((geofs.nav.units.NAV1.distance * FEET_TO_METERS) < (0.0613682505348497385 * geofs.runways.getNearestRunway([geofs.nav.units.NAV1.navaid.lat,geofs.nav.units.NAV1.navaid.lon,0]).lengthMeters)) ? "Yes" : "No";
             }
-            window.groundSpeed = geofs.animation.values.groundSpeedKnt;
-            window.ktias = geofs.animation.values.kias;
-            window.kTrue = geofs.aircraft.instance.trueAirSpeed;
+            window.groundSpeed = geofs.animation.values.groundSpeedKnt.toFixed(1);
+            window.ktias = geofs.animation.values.kias.toFixed(1);
+            window.kTrue = geofs.aircraft.instance.trueAirSpeed.toFixed(1);
             window.vertSpeed = geofs.animation.values.verticalSpeed.toFixed(1);
             window.isGrounded = geofs.animation.values.groundContact;
             }
