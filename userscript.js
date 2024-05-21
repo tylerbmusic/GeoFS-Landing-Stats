@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
-// @version      0.2
+// @version      0.2.1
 // @description  Adds some landing statistics
 // @author       GGamerGGuy
 // @match        https://www.geo-fs.com/geofs.php?v=*
@@ -56,14 +56,17 @@ setTimeout((function() {
                 <p>Tilt: ${geofs.animation.values.atilt.toFixed(1)} degrees</p>
                 <p id="bounces">Bounces: 0</p>
                 `;
-                if (Number(window.vertSpeed) > -60) {
-                    window.statsDiv.innerHTML += `
+                if (Number(window.vertSpeed) <= 0) {
+                    if (Number(window.vertSpeed) > -60) {
+                        window.statsDiv.innerHTML += `
                     <p style="font-weight: bold; color: green;">BUTTER!</p>
                     `;
-                    window.softLanding.play();
-                } else if (Number(window.vertSpeed) > -1000 && Number(window.vertSpeed) < -450) {
-                    window.hardLanding.play();
-                } else if (Number(window.vertSpeed) <= -1000) {
+                        window.softLanding.play();
+                    } else if (Number(window.vertSpeed) > -1000 && Number(window.vertSpeed) < -450) {
+                        window.hardLanding.play();
+                    }
+                }
+                if (Number(window.vertSpeed) <= -1000 || Number(window.vertSpeed > 200)) {
                     window.crashLanding.play();
                 }
                 if (geofs.nav.units.NAV1.inRange) {
