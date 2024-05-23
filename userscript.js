@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
-// @version      0.4
+// @version      0.4.5
 // @description  Adds some landing statistics
 // @author       GGamerGGuy
 // @match        https://www.geo-fs.com/geofs.php?v=*
@@ -35,7 +35,7 @@ setTimeout((function() {
     window.statsDiv.style.width = 'fit-content';
     window.statsDiv.style.height = 'fit-content';
     window.statsDiv.style.background = 'rgb(48 146 255)';
-    window.statsDiv.style.zIndex = '10000';
+    window.statsDiv.style.zIndex = '100000';
     window.statsDiv.style.margin = '30px';
     window.statsDiv.style.paddingLeft = '10px';
     window.statsDiv.style.paddingRight = '10px';
@@ -57,6 +57,7 @@ setTimeout((function() {
             if (window.justLanded && !window.statsOpen) {
                 window.statsOpen = true;
                 window.statsDiv.innerHTML = `
+                <button style="right: 0px; position: absolute; background: none; border: none; cursor: pointer;" onclick="window.closeLndgStats()">X</button>
                 <p>Vertical speed: ${window.vertSpeed} fpm</p>
                 <p>G-Forces: ${window.gForces.toFixed(2)}G</p>
                 <p>Terrain-calibrated V/S (Sometimes inaccurate): ${window.calVertS.toFixed(1)}</p>
@@ -91,8 +92,10 @@ setTimeout((function() {
                     window.statsDiv.innerHTML += `
                             <p style="font-weight: bold; color: red; font-family: cursive;">u ded</p>
                         `;
-                    window.crashDiv = document.createElement('div');
-                    window.crashI = document.body.appendChild(window.crashDiv);
+                    if (!window.crashI) {
+                        window.crashDiv = document.createElement('div');
+                        window.crashI = document.body.appendChild(window.crashDiv);
+                    }
                     window.crashI.innerHTML = `
                         <div id="deathfade" style="
                         position: fixed;
@@ -114,14 +117,6 @@ setTimeout((function() {
                     var dth = document.getElementById("deathfade");
                     dth.style.background = "white";
                 }
-                setTimeout((function() {
-                    window.statsDiv.innerHTML = ``;
-                    window.statsOpen = false;
-                    window.bounces = 0;
-                    if (document.getElementById("deathfade")) {
-                        document.getElementById("deathfade").remove();
-                    }
-                }), 10000); //Delay to close stats window
             } else if (window.justLanded && window.statsOpen) {
                 window.bounces++;
                 var bounceP = document.getElementById("bounces");
@@ -140,7 +135,14 @@ setTimeout((function() {
             }
     }
     setInterval(updateLndgStats, window.refreshRate);
-
+    window.closeLndgStats = function() {
+        window.statsDiv.innerHTML = ``;
+        window.statsOpen = false;
+        window.bounces = 0;
+        if (document.getElementById("deathfade")) {
+            document.getElementById("deathfade").remove();
+        }
+    }
     function updateCalVertS() {
         if ((typeof geofs.animation.values != 'undefined' && !geofs.isPaused()) && !geofs.animation.values.groundContact) {
             window.newAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
