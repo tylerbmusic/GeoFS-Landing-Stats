@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
-// @version      0.3
+// @version      0.4
 // @description  Adds some landing statistics
 // @author       GGamerGGuy
 // @match        https://www.geo-fs.com/geofs.php?v=*
@@ -8,7 +8,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geo-fs.com
 // @grant        none
 // ==/UserScript==
-//**NOTE: TDZ means Touchdown Zone, Deviation from center is probably **
+//**NOTE: TDZ means Touchdown Zone, and Deviation from center is probably in degrees, based on the start of the runway. I could measure this in feet, but I'll do that in a different update.**
 setTimeout((function() {
     'use strict';
     window.refreshRate = 20;
@@ -58,7 +58,8 @@ setTimeout((function() {
                 window.statsOpen = true;
                 window.statsDiv.innerHTML = `
                 <p>Vertical speed: ${window.vertSpeed} fpm</p>
-                <p>Terrain-calibrated V/S: ${window.calVertS.toFixed(1)}</p>
+                <p>G-Forces: ${window.gForces.toFixed(2)}G</p>
+                <p>Terrain-calibrated V/S (Sometimes inaccurate): ${window.calVertS.toFixed(1)}</p>
                 <p>True airspeed: ${window.kTrue} kts</p>
                 <p>Ground speed: ${window.groundSpeed} kts</p>
                 <p>Indicated speed: ${window.ktias} kts</p>
@@ -72,28 +73,27 @@ setTimeout((function() {
                     <p>Deviation from center: ${geofs.nav.units.NAV1.courseDeviation.toFixed(1)}</p>
                     `;
                 }
-                if (window.vertSpeed < window.calVertS+50 && window.vertSpeed > window.calVertS-50) { //If the AGL V/S is similar to the MSL V/S, base it off of the MSL V/S
-                    if (Number(window.vertSpeed) < 0) {
-                        if (Number(window.vertSpeed) > -60) {
-                            window.statsDiv.innerHTML += `
+                if (Number(window.vertSpeed) < 0) {
+                    if (Number(window.vertSpeed) > -60) {
+                        window.statsDiv.innerHTML += `
                             <p style="font-weight: bold; color: green;">BUTTER!</p>
                             `;
-                            window.softLanding.play();
-                        } else if (Number(window.vertSpeed) > -1000 && Number(window.vertSpeed) < -450) {
-                            window.hardLanding.play();
-                            window.statsDiv.innerHTML += `
+                        window.softLanding.play();
+                    } else if (Number(window.vertSpeed) > -1000 && Number(window.vertSpeed) < -450) {
+                        window.hardLanding.play();
+                        window.statsDiv.innerHTML += `
                             <p style="font-weight: bold; color: orange;">HARD LANDING</p>
                             `;
-                        }
                     }
-                    if (Number(window.vertSpeed) <= -1000 || Number(window.vertSpeed > 200)) {
-                        window.crashLanding.play();
-                        window.statsDiv.innerHTML += `
+                }
+                if (Number(window.vertSpeed) <= -1000 || Number(window.vertSpeed > 200)) {
+                    window.crashLanding.play();
+                    window.statsDiv.innerHTML += `
                             <p style="font-weight: bold; color: red; font-family: cursive;">u ded</p>
                         `;
-                        window.crashDiv = document.createElement('div');
-                        window.crashI = document.body.appendChild(window.crashDiv);
-                        window.crashI.innerHTML = `
+                    window.crashDiv = document.createElement('div');
+                    window.crashI = document.body.appendChild(window.crashDiv);
+                    window.crashI.innerHTML = `
                         <div id="deathfade" style="
                         position: fixed;
                         width: 100%;
@@ -111,51 +111,8 @@ setTimeout((function() {
                         font-family: cursive;
                         ">u ded</h1>
                         </div>`;
-                        var dth = document.getElementById("deathfade");
-                        dth.style.background = "white";
-                    }
-                } else {
-                    if ((window.calVertS) < 0) {
-                        if ((window.calVertS) > -60) {
-                            window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: green;">BUTTER!</p>
-                            `;
-                            window.softLanding.play();
-                        } else if ((window.calVertS) > -1000 && (window.calVertS) < -450) {
-                            window.hardLanding.play();
-                            window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: orange;">HARD LANDING</p>
-                            `;
-                        }
-                    }
-                    if ((window.calVertS) <= -1000 || (window.calVertS > 200)) {
-                        window.crashLanding.play();
-                        window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: red; font-family: cursive;">u ded</p>
-                        `;
-                        window.crashDiv = document.createElement('div');
-                        window.crashI = document.body.appendChild(window.crashDiv);
-                        window.crashI.innerHTML = `
-                        <div id="deathfade" style="
-                        position: fixed;
-                        width: 100%;
-                        height: 100%;
-                        background: transparent;
-                        z-index: 99999;
-                        transition: background 1s linear;
-                        left: 0px;
-                        ">
-                        <h1 style="
-                        text-align: center;
-                        vertical-align: middle;
-                        margin: 20%;
-                        color: darkred;
-                        font-family: cursive;
-                        ">u ded</h1>
-                        </div>`;
-                        var deth = document.getElementById("deathfade");
-                        deth.style.background = "white";
-                    }
+                    var dth = document.getElementById("deathfade");
+                    dth.style.background = "white";
                 }
                 setTimeout((function() {
                     window.statsDiv.innerHTML = ``;
@@ -178,6 +135,7 @@ setTimeout((function() {
             window.ktias = geofs.animation.values.kias.toFixed(1);
             window.kTrue = geofs.aircraft.instance.trueAirSpeed.toFixed(1);
             window.vertSpeed = geofs.animation.values.verticalSpeed.toFixed(1);
+            window.gForces = (geofs.animation.values.accZ > 0) ? geofs.animation.values.accZ * 0.12 : geofs.animation.values.accZ * 0.13;
             window.isGrounded = geofs.animation.values.groundContact;
             }
     }
