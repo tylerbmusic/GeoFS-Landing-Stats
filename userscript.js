@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
-// @version      0.4.5
+// @version      0.4.5.1
 // @description  Adds some landing statistics
 // @author       GGamerGGuy
 // @match        https://www.geo-fs.com/geofs.php?v=*
@@ -53,30 +53,32 @@ setTimeout((function() {
     function updateLndgStats() {
         // Check if geofs.animation.values is available
         if (typeof geofs.animation.values != 'undefined' && !geofs.isPaused()) {
-            window.justLanded = (geofs.animation.values.groundContact && !window.isGrounded);
-            if (window.justLanded && !window.statsOpen) {
-                window.statsOpen = true;
-                window.statsDiv.innerHTML = `
+            var ldgAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
+            if (ldgAGL < 500) {
+                window.justLanded = (geofs.animation.values.groundContact && !window.isGrounded);
+                if (window.justLanded && !window.statsOpen) {
+                    window.statsOpen = true;
+                    window.statsDiv.innerHTML = `
                 <button style="right: 0px; position: absolute; background: none; border: none; cursor: pointer;" onclick="window.closeLndgStats()">X</button>
                 <p>Vertical speed: ${window.vertSpeed} fpm</p>
-                <p>G-Forces: ${window.gForces.toFixed(2)}G</p>
+                <p>G-Forces: ${(geofs.animation.values.accZ/9.80665).toFixed(2)}G</p>
                 <p>Terrain-calibrated V/S (Sometimes inaccurate): ${window.calVertS.toFixed(1)}</p>
                 <p>True airspeed: ${window.kTrue} kts</p>
-                <p>Ground speed: ${window.groundSpeed} kts</p>
+                <p>Ground speed: ${window.groundSpeed.toFixed(1)} kts</p>
                 <p>Indicated speed: ${window.ktias} kts</p>
                 <p>Roll: ${geofs.animation.values.aroll.toFixed(1)} degrees</p>
                 <p>Tilt: ${geofs.animation.values.atilt.toFixed(1)} degrees</p>
                 <p id="bounces">Bounces: 0</p>
                 `;
-                if (geofs.nav.units.NAV1.inRange) {
-                    window.statsDiv.innerHTML += `
+                    if (geofs.nav.units.NAV1.inRange) {
+                        window.statsDiv.innerHTML += `
                     <p>Landed in TDZ? ${window.isInTDZ}</p>
                     <p>Deviation from center: ${geofs.nav.units.NAV1.courseDeviation.toFixed(1)}</p>
                     `;
                 }
-                if (Number(window.vertSpeed) < 0) {
-                    if (Number(window.vertSpeed) > -60) {
-                        window.statsDiv.innerHTML += `
+                    if (Number(window.vertSpeed) < 0) {
+                        if (Number(window.vertSpeed) > -60) {
+                            window.statsDiv.innerHTML += `
                             <p style="font-weight: bold; color: green;">BUTTER!</p>
                             `;
                         window.softLanding.play();
@@ -87,9 +89,9 @@ setTimeout((function() {
                             `;
                     }
                 }
-                if (Number(window.vertSpeed) <= -1000 || Number(window.vertSpeed > 200)) {
-                    window.crashLanding.play();
-                    window.statsDiv.innerHTML += `
+                    if (Number(window.vertSpeed) <= -1000 || Number(window.vertSpeed > 200)) {
+                        window.crashLanding.play();
+                        window.statsDiv.innerHTML += `
                             <p style="font-weight: bold; color: red; font-family: cursive;">u ded</p>
                         `;
                     if (!window.crashI) {
@@ -117,24 +119,42 @@ setTimeout((function() {
                     var dth = document.getElementById("deathfade");
                     dth.style.background = "white";
                 }
-            } else if (window.justLanded && window.statsOpen) {
-                window.bounces++;
-                var bounceP = document.getElementById("bounces");
-                bounceP.innerHTML = `Bounces: ${window.bounces}`;
-                window.softLanding.pause();
+                } else if (window.justLanded && window.statsOpen) {
+                    window.bounces++;
+                    var bounceP = document.getElementById("bounces");
+                    bounceP.innerHTML = `Bounces: ${window.bounces}`;
+                    window.softLanding.pause();
+                }
+                if (geofs.nav.units.NAV1.inRange) {
+                    window.isInTDZ = ((geofs.nav.units.NAV1.distance * FEET_TO_METERS) > (0.052902913939976676 * geofs.runways.getNearestRunway([geofs.nav.units.NAV1.navaid.lat,geofs.nav.units.NAV1.navaid.lon,0]).lengthMeters)) && ((geofs.nav.units.NAV1.distance * FEET_TO_METERS) < (0.0613682505348497385 * geofs.runways.getNearestRunway([geofs.nav.units.NAV1.navaid.lat,geofs.nav.units.NAV1.navaid.lon,0]).lengthMeters)) ? "Yes" : "No";
+                }
+                window.groundSpeed = geofs.animation.values.groundSpeedKnt;
+                window.ktias = geofs.animation.values.kias.toFixed(1);
+                window.kTrue = geofs.aircraft.instance.trueAirSpeed.toFixed(1);
+                window.vertSpeed = geofs.animation.values.verticalSpeed.toFixed(1);
+                window.gForces = geofs.animation.values.accZ/9.80665;
+                window.isGrounded = geofs.animation.values.groundContact;
+                window.refreshRate = 12; //Updating more means more accurate calculations.
+            } else {
+                window.refreshRate = 60;
             }
-            if (geofs.nav.units.NAV1.inRange) {
-                window.isInTDZ = ((geofs.nav.units.NAV1.distance * FEET_TO_METERS) > (0.052902913939976676 * geofs.runways.getNearestRunway([geofs.nav.units.NAV1.navaid.lat,geofs.nav.units.NAV1.navaid.lon,0]).lengthMeters)) && ((geofs.nav.units.NAV1.distance * FEET_TO_METERS) < (0.0613682505348497385 * geofs.runways.getNearestRunway([geofs.nav.units.NAV1.navaid.lat,geofs.nav.units.NAV1.navaid.lon,0]).lengthMeters)) ? "Yes" : "No";
-            }
-            window.groundSpeed = geofs.animation.values.groundSpeedKnt.toFixed(1);
-            window.ktias = geofs.animation.values.kias.toFixed(1);
-            window.kTrue = geofs.aircraft.instance.trueAirSpeed.toFixed(1);
-            window.vertSpeed = geofs.animation.values.verticalSpeed.toFixed(1);
-            window.gForces = (geofs.animation.values.accZ > 0) ? geofs.animation.values.accZ * 0.12 : geofs.animation.values.accZ * 0.13;
-            window.isGrounded = geofs.animation.values.groundContact;
-            }
+        }
     }
     setInterval(updateLndgStats, window.refreshRate);
+
+    function updateCalVertS() {
+        if ((typeof geofs.animation.values != 'undefined' &&
+             !geofs.isPaused()) &&
+            ((geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A') !== window.oldAGL) {
+            window.newAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
+            window.newTime = Date.now();
+            window.calVertS = (window.newAGL - window.oldAGL) * (60000/(window.newTime - window.oldTime)); //Calculate the V/S in fpm based on the time between readings.
+            window.oldAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
+            window.oldTime = Date.now();
+        }
+    }
+    setInterval(updateCalVertS, 25);
+
     window.closeLndgStats = function() {
         window.statsDiv.innerHTML = ``;
         window.statsOpen = false;
@@ -143,16 +163,4 @@ setTimeout((function() {
             document.getElementById("deathfade").remove();
         }
     }
-    function updateCalVertS() {
-        if ((typeof geofs.animation.values != 'undefined' && !geofs.isPaused()) && !geofs.animation.values.groundContact) {
-            window.newAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
-            window.newTime = Date.now();
-            if ((window.newAGL - window.oldAGL) !== 0.0) {
-                window.calVertS = (window.newAGL - window.oldAGL) * (60000/(window.newTime - window.oldTime)); //Calculate the V/S in fpm based on the time between readings.
-            }
-            window.oldAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
-            window.oldTime = Date.now();
-        }
-    }
-    setInterval(updateCalVertS, 25);
 }), 5000);
