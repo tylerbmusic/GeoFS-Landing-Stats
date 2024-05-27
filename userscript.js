@@ -112,7 +112,9 @@ setTimeout((function() {
                         window.statsDiv.innerHTML += `
                             <p style="font-weight: bold; color: red; font-family: cursive;">u ded</p>
                         `;
-                    if (!window.crashI) {
+					// remove the u ded screen
+                    /*
+					if (!window.crashI) {
                         window.crashDiv = document.createElement('div');
                         window.crashI = document.body.appendChild(window.crashDiv);
                     }
@@ -136,6 +138,7 @@ setTimeout((function() {
                         </div>`;
                     var dth = document.getElementById("deathfade");
                     dth.style.background = "white";
+					*/
                 }
                 } else if (window.justLanded && window.statsOpen) {
                     window.bounces++;
