@@ -34,7 +34,7 @@ setTimeout((function() {
     window.statsDiv = document.createElement('div');
     window.statsDiv.style.width = 'fit-content';
     window.statsDiv.style.height = 'fit-content';
-    window.statsDiv.style.background = 'rgb(48 146 255)';
+    window.statsDiv.style.background = 'rgb(29 52 87)';
     window.statsDiv.style.zIndex = '100000';
     window.statsDiv.style.margin = '30px';
     window.statsDiv.style.paddingLeft = '10px';
@@ -112,6 +112,7 @@ setTimeout((function() {
                         window.statsDiv.innerHTML += `
                             <p style="font-weight: bold; color: red; font-family: cursive;">u ded</p>
                         `;
+
 					// remove the u ded screen
                     /*
 					if (!window.crashI) {
@@ -139,6 +140,7 @@ setTimeout((function() {
                     var dth = document.getElementById("deathfade");
                     dth.style.background = "white";
 					*/
+
                 }
                 } else if (window.justLanded && window.statsOpen) {
                     window.bounces++;
