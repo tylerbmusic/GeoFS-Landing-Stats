@@ -60,22 +60,40 @@ setTimeout((function() {
                     window.statsOpen = true;
                     window.statsDiv.innerHTML = `
                 <button style="right: 0px; position: absolute; background: none; border: none; cursor: pointer;" onclick="window.closeLndgStats()">X</button>
-                <p>Vertical speed: ${window.vertSpeed} fpm</p>
-                <p>G-Forces: ${(geofs.animation.values.accZ/9.80665).toFixed(2)}G</p>
-                <p>Terrain-calibrated V/S (Sometimes inaccurate): ${window.calVertS.toFixed(1)}</p>
-                <p>True airspeed: ${window.kTrue} kts</p>
-                <p>Ground speed: ${window.groundSpeed.toFixed(1)} kts</p>
-                <p>Indicated speed: ${window.ktias} kts</p>
-                <p>Roll: ${geofs.animation.values.aroll.toFixed(1)} degrees</p>
-                <p>Tilt: ${geofs.animation.values.atilt.toFixed(1)} degrees</p>
-                <p id="bounces">Bounces: 0</p>
-                `;
+                        <style>
+                           .info-block {
+                               display: flex;
+                               flex-direction: column;
+                          }
+                        </style>
+
+                        <style>
+                           .info-block2 {
+                               display: flex;
+                               flex-direction: column;
+                          }
+                        </style>
+
+                        <div class="info-block">
+                          <br>
+                          <span>Vertical speed: ${window.vertSpeed} fpm</span>
+                          <span>G-Forces: ${(geofs.animation.values.accZ/9.80665).toFixed(2)}G</span>
+                          <span>Terrain-calibrated V/S (Sometimes inaccurate): ${window.calVertS.toFixed(1)}</span>
+                          <span>True airspeed: ${window.kTrue} kts</span>
+                          <span>Ground speed: ${window.groundSpeed.toFixed(1)} kts</span>
+                          <span>Indicated speed: ${window.ktias} kts</span>
+                          <span>Roll: ${geofs.animation.values.aroll.toFixed(1)} degrees</span>
+                          <span>Tilt: ${geofs.animation.values.atilt.toFixed(1)} degrees</span>
+                          <span id="bounces">Bounces: 0</span>
+                        </div>
+                    `;
                     if (geofs.nav.units.NAV1.inRange) {
                         window.statsDiv.innerHTML += `
-                    <p>Landed in TDZ? ${window.isInTDZ}</p>
-                    <p>Deviation from center: ${geofs.nav.units.NAV1.courseDeviation.toFixed(1)}</p>
-                    `;
-                }
+                        <div class="info-block2">
+                            <span>Landed in TDZ? ${window.isInTDZ}</span>
+                            <span>Deviation from center: ${geofs.nav.units.NAV1.courseDeviation.toFixed(1)}</span>
+                        </div>`;
+                    }
                     if (Number(window.vertSpeed) < 0) {
                         if (Number(window.vertSpeed) > -60) {
                             window.statsDiv.innerHTML += `
