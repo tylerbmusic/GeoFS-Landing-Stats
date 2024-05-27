@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
-// @version      0.4.5.1
+// @version      0.4.5.2
 // @description  Adds some landing statistics
-// @author       GGamerGGuy
+// @author       GGamerGGuy (UI improvements by Radioactive Potato (krunchiekrunch))
 // @match        https://www.geo-fs.com/geofs.php?v=*
 // @match        https://*.geo-fs.com/geofs.php*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geo-fs.com
@@ -11,8 +11,13 @@
 //**NOTE: TDZ means Touchdown Zone, and Deviation from center is probably in degrees, based on the start of the runway. I could measure this in feet, but I'll do that in a different update.**
 setTimeout((function() {
     'use strict';
+
+    window.closeTimer = false; //Set to true if you want a timer to close the landing stats. Set to false if you want to manually close the landing stats.
+    window.closeSeconds = 10; //Number of seconds to wait before closing the landing stats.
+
     window.refreshRate = 20;
     window.counter = 0;
+    window.isLoaded = false;
 
     window.justLanded = false;
     window.vertSpeed = 0;
@@ -25,7 +30,7 @@ setTimeout((function() {
     window.bounces = 0;
     window.statsOpen = false;
     window.isGrounded = true;
-    window.isInTDZ = false; //0.0613682505348497385 - 0.052902913939976676 * ruwnay length = TDZ
+    window.isInTDZ = false; //0.0613682505348497385 - 0.052902913939976676 * ruwnay length = TDZ for some runways
 
     window.softLanding = new Audio('https://tylerbmusic.github.io/GPWS-files_geofs/soft_landing.wav');
     window.hardLanding = new Audio('https://tylerbmusic.github.io/GPWS-files_geofs/hard_landing.wav');
@@ -41,26 +46,27 @@ setTimeout((function() {
     window.statsDiv.style.paddingRight = '10px';
     window.statsDiv.style.fontFamily = 'system-ui';
     window.statsDiv.style.boxShadow = '0px 0px 20px 0px black';
-    window.statsDiv.style.color = 'black';
+    window.statsDiv.style.color = 'white';
     window.statsDiv.style.position = 'fixed';
     window.statsDiv.style.borderRadius = '10px';
+    window.statsDiv.style.left = '-50%px';
+    window.statsDiv.style.transition = '0.4s ease';
     document.body.appendChild(window.statsDiv);
-
-    window.testValues = document.createElement('div');
-    window.testValues.style.position = 'fixed';
-    document.body.appendChild(window.testValues);
 
     function updateLndgStats() {
         // Check if geofs.animation.values is available
-        if (typeof geofs.animation.values != 'undefined' && !geofs.isPaused()) {
+        if (geofs.cautiousWithTerrain == false && !geofs.isPaused()) {
             var ldgAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
             if (ldgAGL < 500) {
                 window.justLanded = (geofs.animation.values.groundContact && !window.isGrounded);
                 if (window.justLanded && !window.statsOpen) {
+                    if (window.closeTimer) {
+                        setTimeout(window.closeLndgStats, 1000*window.closeSeconds);
+                    }
                     window.statsOpen = true;
                     window.statsDiv.innerHTML = `
                 <button style="right: 0px; position: absolute; background: none; border: none; cursor: pointer;" onclick="window.closeLndgStats()">X</button>
-                        <style>
+                                        <style>
                            .info-block {
                                display: flex;
                                flex-direction: column;
@@ -86,14 +92,14 @@ setTimeout((function() {
                           <span>Tilt: ${geofs.animation.values.atilt.toFixed(1)} degrees</span>
                           <span id="bounces">Bounces: 0</span>
                         </div>
-                    `;
+                `;
+                    window.statsDiv.style.left = '0px';
                     if (geofs.nav.units.NAV1.inRange) {
-                        window.statsDiv.innerHTML += `
-                        <div class="info-block2">
+                        window.statsDiv.innerHTML += `<div class="info-block2">
                             <span>Landed in TDZ? ${window.isInTDZ}</span>
                             <span>Deviation from center: ${geofs.nav.units.NAV1.courseDeviation.toFixed(1)}</span>
                         </div>`;
-                    }
+                }
                     if (Number(window.vertSpeed) < 0) {
                         if (Number(window.vertSpeed) > -60) {
                             window.statsDiv.innerHTML += `
@@ -112,36 +118,7 @@ setTimeout((function() {
                         window.statsDiv.innerHTML += `
                             <p style="font-weight: bold; color: red; font-family: cursive;">u ded</p>
                         `;
-
-					// remove the u ded screen
-                    /*
-					if (!window.crashI) {
-                        window.crashDiv = document.createElement('div');
-                        window.crashI = document.body.appendChild(window.crashDiv);
                     }
-                    window.crashI.innerHTML = `
-                        <div id="deathfade" style="
-                        position: fixed;
-                        width: 100%;
-                        height: 100%;
-                        background: transparent;
-                        z-index: 99999;
-                        transition: background 1s linear;
-                        left: 0px;
-                        ">
-                        <h1 style="
-                        text-align: center;
-                        vertical-align: middle;
-                        margin: 20%;
-                        color: darkred;
-                        font-family: cursive;
-                        ">u ded</h1>
-                        </div>`;
-                    var dth = document.getElementById("deathfade");
-                    dth.style.background = "white";
-					*/
-
-                }
                 } else if (window.justLanded && window.statsOpen) {
                     window.bounces++;
                     var bounceP = document.getElementById("bounces");
@@ -179,11 +156,11 @@ setTimeout((function() {
     setInterval(updateCalVertS, 25);
 
     window.closeLndgStats = function() {
-        window.statsDiv.innerHTML = ``;
-        window.statsOpen = false;
-        window.bounces = 0;
-        if (document.getElementById("deathfade")) {
-            document.getElementById("deathfade").remove();
-        }
+        window.statsDiv.style.left = '-50%';
+        setTimeout((function() {
+            window.statsDiv.innerHTML = ``;
+            window.statsOpen = false;
+            window.bounces = 0;
+        }), 400);
     }
-}), 5000);
+}), 1000);
