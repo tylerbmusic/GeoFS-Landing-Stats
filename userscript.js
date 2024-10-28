@@ -101,22 +101,28 @@ setTimeout((function() {
                         </div>`;
                 }
                     if (Number(window.vertSpeed) < 0) {
-                        if (Number(window.vertSpeed) > -60) {
+                        if (Number(window.vertSpeed) >= -200) {
                             window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: green;">BUTTER!</p>
+                            <p style="font-weight: bold; color: green;">SUPER BUTTER!</p>
                             `;
                         window.softLanding.play();
-                    } else if (Number(window.vertSpeed) > -1000 && Number(window.vertSpeed) < -450) {
+                    } else if (Number(window.vertSpeed) >= -500 && Number(window.vertSpeed) < -200) {
                         window.hardLanding.play();
                         window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: orange;">HARD LANDING</p>
+                            <p style="font-weight: bold; color: yellow;">ACCEPTABLE</p>
+                            `;
+                    }
+                        else if (Number(window.vertSpeed) >= -1000 && Number(window.vertSpeed) < -500) {
+                        window.hardLanding.play();
+                        window.statsDiv.innerHTML += `
+                            <p style="font-weight: bold; color: red;">HARD LANDING</p>
                             `;
                     }
                 }
                     if (Number(window.vertSpeed) <= -1000 || Number(window.vertSpeed > 200)) {
                         window.crashLanding.play();
                         window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: red; font-family: cursive;">u ded</p>
+                            <p style="font-weight: bold; color: crimson; ">u ded</p>
                         `;
                     }
                 } else if (window.justLanded && window.statsOpen) {
