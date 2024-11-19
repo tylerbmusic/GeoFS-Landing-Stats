@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
 // @version      0.4.5.3
-// @description  Adds some landing statistics with improved visual design
+// @description  Adds some landing statistics
 // @author       GGamerGGuy (UI improvements by Radioactive Potato and mostypc123)
 // @match        https://geo-fs.com/geofs.php*
 // @match        https://*.geo-fs.com/geofs.php*
