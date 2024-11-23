@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
-// @version      0.4.5.2
-// @description  Adds some landing statistics
-// @author       GGamerGGuy (UI improvements by Radioactive Potato (krunchiekrunch))
+// @version      0.4.5.3
+// @description  Adds some landing statistics to GeoFS
+// @author       GGamerGGuy (UI improvements by Radioactive Potato and mostypc123)
 // @match        https://geo-fs.com/geofs.php*
 // @match        https://*.geo-fs.com/geofs.php*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geo-fs.com
 // @grant        none
 // ==/UserScript==
-//**NOTE: TDZ means Touchdown Zone, and Deviation from center is probably in degrees, based on the start of the runway. I could measure this in feet, but I'll do that in a different update.**
+
 setTimeout((function() {
     'use strict';
 
-    window.closeTimer = false; //Set to true if you want a timer to close the landing stats. Set to false if you want to manually close the landing stats.
-    window.closeSeconds = 10; //Number of seconds to wait before closing the landing stats.
+    window.closeTimer = false; // Set to true if you want a timer to close the landing stats. Set to false if you want to manually close the landing stats.
+    window.closeSeconds = 10; // Number of seconds to wait before closing the landing stats.
 
     window.refreshRate = 20;
     window.counter = 0;
@@ -30,7 +30,7 @@ setTimeout((function() {
     window.bounces = 0;
     window.statsOpen = false;
     window.isGrounded = true;
-    window.isInTDZ = false; //0.0613682505348497385 - 0.052902913939976676 * ruwnay length = TDZ for some runways
+    window.isInTDZ = false;
 
     window.softLanding = new Audio('https://tylerbmusic.github.io/GPWS-files_geofs/soft_landing.wav');
     window.hardLanding = new Audio('https://tylerbmusic.github.io/GPWS-files_geofs/hard_landing.wav');
@@ -39,22 +39,21 @@ setTimeout((function() {
     window.statsDiv = document.createElement('div');
     window.statsDiv.style.width = 'fit-content';
     window.statsDiv.style.height = 'fit-content';
-    window.statsDiv.style.background = 'rgb(29 52 87)';
+    window.statsDiv.style.background = 'linear-gradient(to bottom right, rgb(29, 52, 87), rgb(20, 40, 70))';
     window.statsDiv.style.zIndex = '100000';
     window.statsDiv.style.margin = '30px';
-    window.statsDiv.style.paddingLeft = '10px';
-    window.statsDiv.style.paddingRight = '10px';
-    window.statsDiv.style.fontFamily = 'system-ui';
-    window.statsDiv.style.boxShadow = '0px 0px 20px 0px black';
+    window.statsDiv.style.padding = '15px';
+    window.statsDiv.style.fontFamily = 'Arial, sans-serif';
+    window.statsDiv.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2)';
     window.statsDiv.style.color = 'white';
     window.statsDiv.style.position = 'fixed';
-    window.statsDiv.style.borderRadius = '10px';
-    window.statsDiv.style.left = '-50%px';
+    window.statsDiv.style.borderRadius = '12px';
+    window.statsDiv.style.left = '-50%';
     window.statsDiv.style.transition = '0.4s ease';
+    window.statsDiv.style.border = '1px solid rgba(255,255,255,0.1)';
     document.body.appendChild(window.statsDiv);
 
     function updateLndgStats() {
-        // Check if geofs.animation.values is available
         if (geofs.cautiousWithTerrain == false && !geofs.isPaused()) {
             var ldgAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
             if (ldgAGL < 500) {
@@ -65,65 +64,94 @@ setTimeout((function() {
                     }
                     window.statsOpen = true;
                     window.statsDiv.innerHTML = `
-                <button style="right: 0px; position: absolute; background: none; border: none; cursor: pointer;" onclick="window.closeLndgStats()">X</button>
-                                        <style>
-                           .info-block {
-                               display: flex;
-                               flex-direction: column;
-                          }
-                        </style>
-
-                        <style>
-                           .info-block2 {
-                               display: flex;
-                               flex-direction: column;
-                          }
-                        </style>
-
-                        <div class="info-block">
-                          <br>
-                          <span>Vertical speed: ${window.vertSpeed} fpm</span>
-                          <span>G-Forces: ${(geofs.animation.values.accZ/9.80665).toFixed(2)}G</span>
-                          <span>Terrain-calibrated V/S (Sometimes inaccurate): ${window.calVertS.toFixed(1)}</span>
-                          <span>True airspeed: ${window.kTrue} kts</span>
-                          <span>Ground speed: ${window.groundSpeed.toFixed(1)} kts</span>
-                          <span>Indicated speed: ${window.ktias} kts</span>
-                          <span>Roll: ${geofs.animation.values.aroll.toFixed(1)} degrees</span>
-                          <span>Tilt: ${geofs.animation.values.atilt.toFixed(1)} degrees</span>
-                          <span id="bounces">Bounces: 0</span>
-                        </div>
+                <button style="
+                    right: 10px; 
+                    top: 10px; 
+                    position: absolute; 
+                    background: rgba(255,255,255,0.2); 
+                    border: none; 
+                    color: white; 
+                    cursor: pointer; 
+                    width: 30px; 
+                    height: 30px; 
+                    border-radius: 50%; 
+                    font-weight: bold;" 
+                    onclick="window.closeLndgStats()">✕</button>
+                    <style>
+                        .info-block {
+                            display: grid;
+                            grid-template-columns: repeat(2, 1fr);
+                            gap: 10px;
+                            font-size: 14px;
+                        }
+                        .landing-quality {
+                            grid-column: 1 / -1;
+                            text-align: center;
+                            font-weight: bold;
+                            margin-top: 10px;
+                            padding: 5px;
+                            border-radius: 5px;
+                        }
+                    </style>
+                    <div class="info-block">
+                        <span>Vertical speed: ${window.vertSpeed} fpm</span>
+                        <span>G-Forces: ${(geofs.animation.values.accZ/9.80665).toFixed(2)}G</span>
+                        <span>Terrain-calibrated V/S: ${window.calVertS.toFixed(1)}</span>
+                        <span>True airspeed: ${window.kTrue} kts</span>
+                        <span>Ground speed: ${window.groundSpeed.toFixed(1)} kts</span>
+                        <span>Indicated speed: ${window.ktias} kts</span>
+                        <span>Roll: ${geofs.animation.values.aroll.toFixed(1)} degrees</span>
+                        <span>Tilt: ${geofs.animation.values.atilt.toFixed(1)} degrees</span>
+                        <span id="bounces">Bounces: 0</span>
+                    </div>
                 `;
                     window.statsDiv.style.left = '0px';
                     if (geofs.nav.units.NAV1.inRange) {
-                        window.statsDiv.innerHTML += `<div class="info-block2">
+                        window.statsDiv.innerHTML += `
+                        <div style="margin-top: 10px; font-size: 14px;">
                             <span>Landed in TDZ? ${window.isInTDZ}</span>
                             <span>Deviation from center: ${geofs.nav.units.NAV1.courseDeviation.toFixed(1)}</span>
                         </div>`;
-                }
+                    }
                     if (Number(window.vertSpeed) < 0) {
-                       if (Number(window.vertSpeed) >= -200) {
+                        let qualityClass = '';
+                        let qualityText = '';
+                        if (Number(window.vertSpeed) >= -50) {
+                            qualityClass = 'landing-quality';
+                            qualityText = 'SUPER BUTTER!';
                             window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: green;">SUPER BUTTER!</p>
-                            `;
-                        window.softLanding.play();
-                    } else if (Number(window.vertSpeed) >= -500 && Number(window.vertSpeed) < -200) {
-                        window.hardLanding.play();
-                        window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: yellow;">ACCEPTABLE</p>
-                            `;
+                                <div class="${qualityClass}" style="background-color: green; color: white;">
+                                    ${qualityText}
+                                </div>`;
+                            window.softLanding.play();
+                        } else if (Number(window.vertSpeed) >= -200) {
+                            qualityClass = 'landing-quality';
+                            qualityText = 'BUTTER';
+                            window.statsDiv.innerHTML += `
+                                <div class="${qualityClass}" style="background-color: green; color: white;">
+                                    ${qualityText}
+                                </div>`;
+                            window.softLanding.play();
+                        } else if (Number(window.vertSpeed) >= -500 && Number(window.vertSpeed) < -200) {
+                            window.hardLanding.play();
+                            window.statsDiv.innerHTML += `
+                                <div class="${qualityClass}" style="background-color: yellow; color: black;">
+                                    ACCEPTABLE
+                                </div>`;
+                        } else if (Number(window.vertSpeed) >= -1000 && Number(window.vertSpeed) < -500) {
+                            window.hardLanding.play();
+                            window.statsDiv.innerHTML += `
+                                <div class="${qualityClass}" style="background-color: red; color: white;">
+                                    HARD LANDING
+                                </div>`;
+                        }
                     }
-                        else if (Number(window.vertSpeed) >= -1000 && Number(window.vertSpeed) < -500) {
-                        window.hardLanding.play();
-                        window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: red;">HARD LANDING</p>
-                            `;
-                    }
-                }
                     if (Number(window.vertSpeed) <= -1000 || Number(window.vertSpeed > 200)) {
                         window.crashLanding.play();
                         window.statsDiv.innerHTML += `
-                            <p style="font-weight: bold; color: crimson; ">u ded</p>
-                        `;
+                            <div class="landing-quality" style="background-color: crimson; color: white;">
+                                u ded
+                            </div>`;
                     }
                 } else if (window.justLanded && window.statsOpen) {
                     window.bounces++;
@@ -140,7 +168,7 @@ setTimeout((function() {
                 window.vertSpeed = geofs.animation.values.verticalSpeed.toFixed(1);
                 window.gForces = geofs.animation.values.accZ/9.80665;
                 window.isGrounded = geofs.animation.values.groundContact;
-                window.refreshRate = 12; //Updating more means more accurate calculations.
+                window.refreshRate = 12;
             } else {
                 window.refreshRate = 60;
             }
@@ -154,7 +182,7 @@ setTimeout((function() {
             ((geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A') !== window.oldAGL) {
             window.newAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
             window.newTime = Date.now();
-            window.calVertS = (window.newAGL - window.oldAGL) * (60000/(window.newTime - window.oldTime)); //Calculate the V/S in fpm based on the time between readings.
+            window.calVertS = (window.newAGL - window.oldAGL) * (60000/(window.newTime - window.oldTime));
             window.oldAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
             window.oldTime = Date.now();
         }
