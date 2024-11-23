@@ -12,8 +12,8 @@
 setTimeout((function() {
     'use strict';
 
-    window.closeTimer = false; //Set to true if you want a timer to close the landing stats. Set to false if you want to manually close the landing stats.
-    window.closeSeconds = 10; //Number of seconds to wait before closing the landing stats.
+    window.closeTimer = false; // Set to true if you want a timer to close the landing stats. Set to false if you want to manually close the landing stats.
+    window.closeSeconds = 10; // Number of seconds to wait before closing the landing stats.
 
     window.refreshRate = 20;
     window.counter = 0;
@@ -32,12 +32,10 @@ setTimeout((function() {
     window.isGrounded = true;
     window.isInTDZ = false;
 
-    // Enhanced audio files with better quality
     window.softLanding = new Audio('https://tylerbmusic.github.io/GPWS-files_geofs/soft_landing.wav');
     window.hardLanding = new Audio('https://tylerbmusic.github.io/GPWS-files_geofs/hard_landing.wav');
     window.crashLanding = new Audio('https://tylerbmusic.github.io/GPWS-files_geofs/crash_landing.wav');
 
-    // Improved stats div styling
     window.statsDiv = document.createElement('div');
     window.statsDiv.style.width = 'fit-content';
     window.statsDiv.style.height = 'fit-content';
@@ -56,7 +54,6 @@ setTimeout((function() {
     document.body.appendChild(window.statsDiv);
 
     function updateLndgStats() {
-        // Existing logic with minimal changes
         if (geofs.cautiousWithTerrain == false && !geofs.isPaused()) {
             var ldgAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
             if (ldgAGL < 500) {
