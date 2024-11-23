@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
 // @version      0.4.5.3
-// @description  Adds some landing statistics
+// @description  Adds some landing statistics to GeoFS
 // @author       GGamerGGuy (UI improvements by Radioactive Potato and mostypc123)
 // @match        https://geo-fs.com/geofs.php*
 // @match        https://*.geo-fs.com/geofs.php*
@@ -116,9 +116,17 @@ setTimeout((function() {
                     if (Number(window.vertSpeed) < 0) {
                         let qualityClass = '';
                         let qualityText = '';
-                        if (Number(window.vertSpeed) >= -200) {
+                        if (Number(window.vertSpeed) >= -50) {
                             qualityClass = 'landing-quality';
                             qualityText = 'SUPER BUTTER!';
+                            window.statsDiv.innerHTML += `
+                                <div class="${qualityClass}" style="background-color: green; color: white;">
+                                    ${qualityText}
+                                </div>`;
+                            window.softLanding.play();
+                        } else if (Number(window.vertSpeed) >= -200) {
+                            qualityClass = 'landing-quality';
+                            qualityText = 'BUTTER';
                             window.statsDiv.innerHTML += `
                                 <div class="${qualityClass}" style="background-color: green; color: white;">
                                     ${qualityText}
