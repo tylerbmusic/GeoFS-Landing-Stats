@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
-// @version      0.4.5.3
+// @version      0.4.5.4
 // @description  Adds some landing statistics to GeoFS
-// @author       GGamerGGuy (UI improvements by Radioactive Potato and mostypc123)
+// @author       GGamerGGuy, Radioactive Potato, AbnormalHuman, and mostypc123
 // @match        https://geo-fs.com/geofs.php*
 // @match        https://*.geo-fs.com/geofs.php*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geo-fs.com
@@ -65,17 +65,17 @@ setTimeout((function() {
                     window.statsOpen = true;
                     window.statsDiv.innerHTML = `
                 <button style="
-                    right: 10px; 
-                    top: 10px; 
-                    position: absolute; 
-                    background: rgba(255,255,255,0.2); 
-                    border: none; 
-                    color: white; 
-                    cursor: pointer; 
-                    width: 30px; 
-                    height: 30px; 
-                    border-radius: 50%; 
-                    font-weight: bold;" 
+                    right: 10px;
+                    top: 10px;
+                    position: absolute;
+                    background: rgba(255,255,255,0.2);
+                    border: none;
+                    color: white;
+                    cursor: pointer;
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    font-weight: bold;"
                     onclick="window.closeLndgStats()">✕</button>
                     <style>
                         .info-block {
