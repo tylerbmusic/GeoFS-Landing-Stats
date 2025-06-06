@@ -1,17 +1,21 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
-// @version      0.4.5.4
+// @namespace    https://github.com/tylerbmusic/GeoFS-Landing-Stats
+// @version      0.4.5.5
 // @description  Adds some landing statistics to GeoFS
 // @author       GGamerGGuy, Radioactive Potato, AbnormalHuman, and mostypc123
 // @match        https://geo-fs.com/geofs.php*
 // @match        https://*.geo-fs.com/geofs.php*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geo-fs.com
 // @grant        none
+// @downloadURL  https://github.com/tylerbmusic/GeoFS-Landing-Stats/raw/refs/heads/main/userscript.js
+// @updateURL    https://github.com/tylerbmusic/GeoFS-Landing-Stats/raw/refs/heads/main/userscript.js
 // ==/UserScript==
 
 setTimeout((function() {
     'use strict';
-
+    window.DEGREES_TO_RAD = window.DEGREES_TO_RAD || 0.017453292519943295769236907684886127134428718885417254560971914401710091146034494436822415696345094822123044925073790592483854692275281012398474218934047117319168245015010769561697553581238605305168789;
+    window.RAD_TO_DEGREES = window.RAD_TO_DEGREES || 57.295779513082320876798154814105170332405472466564321549160243861202847148321552632440968995851110944186223381632864893281448264601248315036068267863411942122526388097467267926307988702893110767938261;
     window.closeTimer = false; // Set to true if you want a timer to close the landing stats. Set to false if you want to manually close the landing stats.
     window.closeSeconds = 10; // Number of seconds to wait before closing the landing stats.
 
@@ -54,7 +58,7 @@ setTimeout((function() {
     document.body.appendChild(window.statsDiv);
 
     function updateLndgStats() {
-        if (geofs.cautiousWithTerrain == false && !geofs.isPaused()) {
+        if (geofs.cautiousWithTerrain == false && !geofs.isPaused() && !(window.sd && window.sd.cam.data)) {
             var ldgAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
             if (ldgAGL < 500) {
                 window.justLanded = (geofs.animation.values.groundContact && !window.isGrounded);
@@ -62,6 +66,13 @@ setTimeout((function() {
                     if (window.closeTimer) {
                         setTimeout(window.closeLndgStats, 1000*window.closeSeconds);
                     }
+                    let p_vs = window.clamp((window.lVS - 50) / 70, 0, 5); // 50 fpm or less = no penalty, 400+ fpm = max penalty
+                    let p_g = window.clamp(Math.abs(window.geofs.animation.values.accZ/9.80665 - 1.0) * 2, 0, 2.0) // 1.0g ideal, 2.0g = 2 point penalty
+                    let p_b = Math.min(window.bounces * 2.0, 6.0); // 2 points per bounce, up to 6
+                    let p_r = window.clamp(window.lRoll / 10, 0, 1.5); // 0° = 0, 15°+ = max penalty
+                    let p_tdz = (window.isInTDZ == true) ? 0 : 1.0; // 1 point penalty for landing outside TDZ
+                    window.landingScore = window.clamp((10-p_vs-p_g-p_b-p_r-p_tdz), 0, 10);
+                    console.log("Landing score: " + window.landingScore);
                     window.statsOpen = true;
                     window.statsDiv.innerHTML = `
                 <button style="
@@ -94,25 +105,24 @@ setTimeout((function() {
                         }
                     </style>
                     <div class="info-block">
+                        <span>Landing Score: ${window.landingScore.toFixed(1)}/10</span>
                         <span>Vertical speed: ${window.vertSpeed} fpm</span>
-                        <span>G-Forces: ${(geofs.animation.values.accZ/9.80665).toFixed(2)}G</span>
+                        <span>G-Forces: ${(window.geofs.animation.values.accZ/9.80665).toFixed(2)}G</span>
                         <span>Terrain-calibrated V/S: ${window.calVertS.toFixed(1)}</span>
                         <span>True airspeed: ${window.kTrue} kts</span>
                         <span>Ground speed: ${window.groundSpeed.toFixed(1)} kts</span>
                         <span>Indicated speed: ${window.ktias} kts</span>
-                        <span>Roll: ${geofs.animation.values.aroll.toFixed(1)} degrees</span>
-                        <span>Tilt: ${geofs.animation.values.atilt.toFixed(1)} degrees</span>
+                        <span>Roll: ${window.geofs.animation.values.aroll.toFixed(1)} degrees</span>
+                        <span>Tilt: ${window.geofs.animation.values.atilt.toFixed(1)} degrees</span>
                         <span id="bounces">Bounces: 0</span>
                     </div>
                 `;
                     window.statsDiv.style.left = '0px';
-                    if (geofs.nav.units.NAV1.inRange) {
-                        window.statsDiv.innerHTML += `
+                    window.statsDiv.innerHTML += `
                         <div style="margin-top: 10px; font-size: 14px;">
-                            <span>Landed in TDZ? ${window.isInTDZ}</span>
-                            <span>Deviation from center: ${geofs.nav.units.NAV1.courseDeviation.toFixed(1)}</span>
+                            <span>Landed in TDZ? ${window.isInTDZ}</span><br>
+                            ${(window.geofs.nav.units.NAV1.inRange) ? `<span>Deviation from center: ${window.geofs.nav.units.NAV1.courseDeviation.toFixed(1)}</span>` : ""}
                         </div>`;
-                    }
                     if (Number(window.vertSpeed) < 0) {
                         let qualityClass = '';
                         let qualityText = '';
@@ -158,16 +168,28 @@ setTimeout((function() {
                     var bounceP = document.getElementById("bounces");
                     bounceP.innerHTML = `Bounces: ${window.bounces}`;
                     window.softLanding.pause();
+                    let p_vs = window.clamp((window.lVS - 50) / 70, 0, 5); // 50 fpm or less = no penalty, 400+ fpm = max penalty
+                    let p_g = window.clamp(Math.abs(window.geofs.animation.values.accZ/9.80665 - 1.0) * 2, 0, 2.0) // 1.0g ideal, 2.0g = 2 point penalty
+                    let p_b = Math.min(window.bounces * 2.0, 6.0); // 2 points per bounce, up to 6
+                    let p_r = window.clamp(window.lRoll / 10, 0, 1.5); // 0° = 0, 15°+ = max penalty
+                    let p_tdz = (window.isInTDZ == true) ? 0 : 1.0; // 1 point penalty for landing outside TDZ
+                    window.landingScore = window.clamp((10-p_vs-p_g-p_b-p_r-p_tdz), 0, 10);
+                    console.log("Landing score: " + window.landingScore);
                 }
-                if (geofs.nav.units.NAV1.inRange) {
+                /*if (geofs.nav.units.NAV1.inRange) {
                     window.isInTDZ = ((geofs.nav.units.NAV1.distance * FEET_TO_METERS) > (0.052902913939976676 * geofs.runways.getNearestRunway([geofs.nav.units.NAV1.navaid.lat,geofs.nav.units.NAV1.navaid.lon,0]).lengthMeters)) && ((geofs.nav.units.NAV1.distance * FEET_TO_METERS) < (0.0613682505348497385 * geofs.runways.getNearestRunway([geofs.nav.units.NAV1.navaid.lat,geofs.nav.units.NAV1.navaid.lon,0]).lengthMeters)) ? "Yes" : "No";
+                }*/
+                if (!window.geofs.animation.values.groundContact) {
+                    window.lVS = Math.abs(window.geofs.animation.values.verticalSpeed);
+                    window.lRoll = Math.abs(window.geofs.animation.values.aroll);
                 }
-                window.groundSpeed = geofs.animation.values.groundSpeedKnt;
-                window.ktias = geofs.animation.values.kias.toFixed(1);
-                window.kTrue = geofs.aircraft.instance.trueAirSpeed.toFixed(1);
-                window.vertSpeed = geofs.animation.values.verticalSpeed.toFixed(1);
-                window.gForces = geofs.animation.values.accZ/9.80665;
-                window.isGrounded = geofs.animation.values.groundContact;
+                window.isInTDZ = window.getTDZStatus();
+                window.groundSpeed = window.geofs.animation.values.groundSpeedKnt;
+                window.ktias = window.geofs.animation.values.kias.toFixed(1);
+                window.kTrue = window.geofs.aircraft.instance.trueAirSpeed.toFixed(1);
+                window.vertSpeed = window.geofs.animation.values.verticalSpeed.toFixed(1);
+                window.gForces = window.geofs.animation.values.accZ/9.80665;
+                window.isGrounded = window.geofs.animation.values.groundContact;
                 window.refreshRate = 12;
             } else {
                 window.refreshRate = 60;
@@ -177,15 +199,57 @@ setTimeout((function() {
     setInterval(updateLndgStats, window.refreshRate);
 
     function updateCalVertS() {
-        if ((typeof geofs.animation.values != 'undefined' &&
-             !geofs.isPaused()) &&
-            ((geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A') !== window.oldAGL) {
-            window.newAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
+        if ((typeof window.geofs.animation.values != 'undefined' &&
+             !window.geofs.isPaused()) &&
+            ((window.geofs.animation.values.altitude !== undefined && window.geofs.animation.values.groundElevationFeet !== undefined) ? ((window.geofs.animation.values.altitude - window.geofs.animation.values.groundElevationFeet) + (window.geofs.aircraft.instance.collisionPoints[window.geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A') !== window.oldAGL) {
+            window.newAGL = (window.geofs.animation.values.altitude !== undefined && window.geofs.animation.values.groundElevationFeet !== undefined) ? ((window.geofs.animation.values.altitude - window.geofs.animation.values.groundElevationFeet) + (window.geofs.aircraft.instance.collisionPoints[window.geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
             window.newTime = Date.now();
             window.calVertS = (window.newAGL - window.oldAGL) * (60000/(window.newTime - window.oldTime));
-            window.oldAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
+            window.oldAGL = (window.geofs.animation.values.altitude !== undefined && window.geofs.animation.values.groundElevationFeet !== undefined) ? ((window.geofs.animation.values.altitude - window.geofs.animation.values.groundElevationFeet) + (window.geofs.aircraft.instance.collisionPoints[window.geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
             window.oldTime = Date.now();
         }
+    }
+    setInterval(async() => {
+        let renderDistance = 0.05;
+        var l0 = Math.floor(window.geofs.aircraft.instance.llaLocation[0]/renderDistance)*renderDistance;
+        var l1 = Math.floor(window.geofs.aircraft.instance.llaLocation[1]/renderDistance)*renderDistance;
+        var bounds = (l0) + ", " + (l1) + ", " + (l0+renderDistance) + ", " + (l1+renderDistance);
+        const overpassUrl = 'https://overpass-api.de/api/interpreter';
+        const query = `[out:json];
+(
+  way["aeroway"="runway"]({{bbox}});
+);
+out body;
+>;
+out skel qt;
+`;
+        const response = await fetch(`${overpassUrl}?data=${encodeURIComponent(query.replace('{{bbox}}', bounds))}`);
+        const data = await response.json();
+        window.lData = data;
+    }, 5000);
+    window.getTDZStatus = function() {
+        if (window.lData) {
+            const data = window.lData;
+            let arr = [];
+            let minDist = [-1, Infinity];
+            for (let i in data.elements) {
+                let d = data.elements[i];
+                if (d.type == "way") {
+                    let n = d.nodes;
+                    arr.push(n[0]);
+                    arr.push(n[n.length - 1]);
+                } else if (d.type == "node" && arr.indexOf(d.id) != -1 && window.sd.getDistance(window.geofs.aircraft.instance.llaLocation, [d.lat, d.lon]) < minDist[1]) {
+                    minDist = [[d.lat, d.lon], window.sd.getDistance(window.geofs.aircraft.instance.llaLocation, [d.lat, d.lon])];
+                }
+            }
+            let lla = window.geofs.aircraft.instance.llaLocation;
+            let runway = window.Cesium.Cartesian3.fromDegrees(minDist[0][1], minDist[0][0], lla[2]);
+            let pos = window.Cesium.Cartesian3.fromDegrees(lla[1], lla[0], lla[2]);
+            let dist = window.Cesium.Cartesian3.distance(runway, pos)*window.METERS_TO_FEET;
+            let inTDZ = (dist > 1000 && dist < 1200);
+            return inTDZ;
+        }
+        return false;
     }
     setInterval(updateCalVertS, 25);
 
