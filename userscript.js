@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
 // @namespace    https://github.com/tylerbmusic/GeoFS-Landing-Stats
-// @version      0.4.5.5
+// @version      0.4.5.6
 // @description  Adds some landing statistics to GeoFS
 // @author       GGamerGGuy, Radioactive Potato, AbnormalHuman, and mostypc123
 // @match        https://geo-fs.com/geofs.php*
@@ -14,6 +14,7 @@
 
 setTimeout((function() {
     'use strict';
+    window.MS_TO_KNOTS = window.MS_TO_KNOTS || 1.94384449;
     window.DEGREES_TO_RAD = window.DEGREES_TO_RAD || 0.017453292519943295769236907684886127134428718885417254560971914401710091146034494436822415696345094822123044925073790592483854692275281012398474218934047117319168245015010769561697553581238605305168789;
     window.RAD_TO_DEGREES = window.RAD_TO_DEGREES || 57.295779513082320876798154814105170332405472466564321549160243861202847148321552632440968995851110944186223381632864893281448264601248315036068267863411942122526388097467267926307988702893110767938261;
     window.closeTimer = false; // Set to true if you want a timer to close the landing stats. Set to false if you want to manually close the landing stats.
@@ -128,7 +129,7 @@ setTimeout((function() {
                         let qualityText = '';
                         if (Number(window.vertSpeed) >= -50) {
                             qualityClass = 'landing-quality';
-                            qualityText = 'SUPER BUTTER!';
+                            qualityText = 'BUTTER';
                             window.statsDiv.innerHTML += `
                                 <div class="${qualityClass}" style="background-color: green; color: white;">
                                     ${qualityText}
@@ -136,7 +137,7 @@ setTimeout((function() {
                             window.softLanding.play();
                         } else if (Number(window.vertSpeed) >= -200) {
                             qualityClass = 'landing-quality';
-                            qualityText = 'BUTTER';
+                            qualityText = 'GREAT';
                             window.statsDiv.innerHTML += `
                                 <div class="${qualityClass}" style="background-color: green; color: white;">
                                     ${qualityText}
@@ -160,7 +161,7 @@ setTimeout((function() {
                         window.crashLanding.play();
                         window.statsDiv.innerHTML += `
                             <div class="landing-quality" style="background-color: crimson; color: white;">
-                                u ded
+                                CRASH
                             </div>`;
                     }
                 } else if (window.justLanded && window.statsOpen) {
@@ -186,7 +187,7 @@ setTimeout((function() {
                 window.isInTDZ = window.getTDZStatus();
                 window.groundSpeed = window.geofs.animation.values.groundSpeedKnt;
                 window.ktias = window.geofs.animation.values.kias.toFixed(1);
-                window.kTrue = window.geofs.aircraft.instance.trueAirSpeed.toFixed(1);
+                window.kTrue = (window.geofs.aircraft.instance.trueAirSpeed * window.MS_TO_KNOTS).toFixed(1);
                 window.vertSpeed = window.geofs.animation.values.verticalSpeed.toFixed(1);
                 window.gForces = window.geofs.animation.values.accZ/9.80665;
                 window.isGrounded = window.geofs.animation.values.groundContact;
@@ -209,47 +210,15 @@ setTimeout((function() {
             window.oldTime = Date.now();
         }
     }
-    setInterval(async() => {
-        let renderDistance = 0.05;
-        var l0 = Math.floor(window.geofs.aircraft.instance.llaLocation[0]/renderDistance)*renderDistance;
-        var l1 = Math.floor(window.geofs.aircraft.instance.llaLocation[1]/renderDistance)*renderDistance;
-        var bounds = (l0) + ", " + (l1) + ", " + (l0+renderDistance) + ", " + (l1+renderDistance);
-        const overpassUrl = 'https://overpass-api.de/api/interpreter';
-        const query = `[out:json];
-(
-  way["aeroway"="runway"]({{bbox}});
-);
-out body;
->;
-out skel qt;
-`;
-        const response = await fetch(`${overpassUrl}?data=${encodeURIComponent(query.replace('{{bbox}}', bounds))}`);
-        const data = await response.json();
-        window.lData = data;
-    }, 5000);
     window.getTDZStatus = function() {
-        if (window.lData) {
-            const data = window.lData;
-            let arr = [];
-            let minDist = [-1, Infinity];
-            for (let i in data.elements) {
-                let d = data.elements[i];
-                if (d.type == "way") {
-                    let n = d.nodes;
-                    arr.push(n[0]);
-                    arr.push(n[n.length - 1]);
-                } else if (d.type == "node" && arr.indexOf(d.id) != -1 && window.sd.getDistance(window.geofs.aircraft.instance.llaLocation, [d.lat, d.lon]) < minDist[1]) {
-                    minDist = [[d.lat, d.lon], window.sd.getDistance(window.geofs.aircraft.instance.llaLocation, [d.lat, d.lon])];
-                }
-            }
-            let lla = window.geofs.aircraft.instance.llaLocation;
-            let runway = window.Cesium.Cartesian3.fromDegrees(minDist[0][1], minDist[0][0], lla[2]);
-            let pos = window.Cesium.Cartesian3.fromDegrees(lla[1], lla[0], lla[2]);
-            let dist = window.Cesium.Cartesian3.distance(runway, pos)*window.METERS_TO_FEET;
-            let inTDZ = (dist > 1000 && dist < 1200);
-            return inTDZ;
+        var nearestRwDist = window.geofs.utils.distanceBetweenLocations(geofs.aircraft.instance.llaLocation, geofs.runways.getNearestRunway(geofs.aircraft.instance.llaLocation).aimingPointLla1);
+        var testDist =  window.geofs.utils.distanceBetweenLocations(geofs.aircraft.instance.llaLocation, geofs.runways.getNearestRunway(geofs.aircraft.instance.llaLocation).aimingPointLla2)
+        if (nearestRwDist > testDist) nearestRwDist = testDist;
+        if (nearestRwDist < 600) { //high tolerance since TDZ will often differ from the terrain display.
+            return true
+        } else {
+            return false;
         }
-        return false;
     }
     setInterval(updateCalVertS, 25);
 
