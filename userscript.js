@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
 // @namespace    https://github.com/tylerbmusic/GeoFS-Landing-Stats
-// @version      0.4.5.6
+// @version      0.4.5.7
 // @description  Adds some landing statistics to GeoFS
-// @author       GGamerGGuy, Radioactive Potato, AbnormalHuman, and mostypc123
+// @author       GGamerGGuy, Radioactive Potato, AbnormalHuman, mostypc123, and Ariakim Taiyo
 // @match        https://geo-fs.com/geofs.php*
 // @match        https://*.geo-fs.com/geofs.php*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geo-fs.com
