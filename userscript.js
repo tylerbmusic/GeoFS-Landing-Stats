@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GeoFS Landing Stats
 // @namespace    https://github.com/tylerbmusic/GeoFS-Landing-Stats
-// @version      0.4.5.7
+// @version      0.4.6
 // @description  Adds some landing statistics to GeoFS
 // @author       GGamerGGuy, Radioactive Potato, AbnormalHuman, mostypc123, and Ariakim Taiyo
 // @match        https://geo-fs.com/geofs.php*
@@ -41,6 +41,44 @@ setTimeout((function() {
     window.hardLanding = new Audio('https://tylerbmusic.github.io/GPWS-files_geofs/hard_landing.wav');
     window.crashLanding = new Audio('https://tylerbmusic.github.io/GPWS-files_geofs/crash_landing.wav');
 
+    //ANONYMOUS TRACKING VIA CLOUDFLARE (I will never sell your data.)
+    //What's being tracked: For each script, how many hits (page loads) it's had in the last 24 hours, how many total hits in the last 30 days, and how many unique users there are.
+    //Why it's being tracked: I am curious to know how many people are using my addons.
+    //To see the data, go to https://track.tylerbialowas-bard.workers.dev in a web browser.
+
+    async function track() {
+        if (true) { //To opt out of anonymous tracking, change the word "true" in this line to "false".
+            const SCRIPT_NAME = "Landing_Stats";
+
+            // Generate persistent ID
+            let userId = localStorage.getItem("myScriptUserId");
+
+            if (!userId) {
+                userId = crypto.randomUUID();
+                localStorage.setItem("myScriptUserId", userId);
+            }
+            try {
+                const response = await fetch("https://track.tylerbialowas-bard.workers.dev", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        script: SCRIPT_NAME,
+                        userId: userId
+                    }),
+                });
+
+                if (response.ok) {
+                    console.log("Analytics event sent successfully");
+                }
+            } catch (error) {
+                console.error("Failed to track event:", error);
+            }
+        }
+    }
+    track();
+
     window.statsDiv = document.createElement('div');
     window.statsDiv.style.width = 'fit-content';
     window.statsDiv.style.height = 'fit-content';
@@ -59,10 +97,10 @@ setTimeout((function() {
     document.body.appendChild(window.statsDiv);
 
     function updateLndgStats() {
-        if (geofs.cautiousWithTerrain == false && !geofs.isPaused() && !(window.sd && window.sd.cam.data)) {
-            var ldgAGL = (geofs.animation.values.altitude !== undefined && geofs.animation.values.groundElevationFeet !== undefined) ? ((geofs.animation.values.altitude - geofs.animation.values.groundElevationFeet) + (geofs.aircraft.instance.collisionPoints[geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
+        if (window.geofs.cautiousWithTerrain == false && !window.geofs.isPaused() && !(window.sd && window.sd.cam.data)) {
+            var ldgAGL = (window.geofs.animation.values.altitude !== undefined && window.geofs.animation.values.groundElevationFeet !== undefined) ? ((window.geofs.animation.values.altitude - window.geofs.animation.values.groundElevationFeet) + (window.geofs.aircraft.instance.collisionPoints[window.geofs.aircraft.instance.collisionPoints.length - 2].worldPosition[2]*3.2808399)) : 'N/A';
             if (ldgAGL < 500) {
-                window.justLanded = (geofs.animation.values.groundContact && !window.isGrounded);
+                window.justLanded = (window.geofs.animation.values.groundContact && !window.isGrounded);
                 if (window.justLanded && !window.statsOpen) {
                     if (window.closeTimer) {
                         setTimeout(window.closeLndgStats, 1000*window.closeSeconds);
@@ -211,8 +249,8 @@ setTimeout((function() {
         }
     }
     window.getTDZStatus = function() {
-        var nearestRwDist = window.geofs.utils.distanceBetweenLocations(geofs.aircraft.instance.llaLocation, geofs.runways.getNearestRunway(geofs.aircraft.instance.llaLocation).aimingPointLla1);
-        var testDist =  window.geofs.utils.distanceBetweenLocations(geofs.aircraft.instance.llaLocation, geofs.runways.getNearestRunway(geofs.aircraft.instance.llaLocation).aimingPointLla2)
+        var nearestRwDist = window.geofs.utils.distanceBetweenLocations(window.geofs.aircraft.instance.llaLocation, window.geofs.runways.getNearestRunway(window.geofs.aircraft.instance.llaLocation).aimingPointLla1);
+        var testDist = window.geofs.utils.distanceBetweenLocations(window.geofs.aircraft.instance.llaLocation, window.geofs.runways.getNearestRunway(window.geofs.aircraft.instance.llaLocation).aimingPointLla2)
         if (nearestRwDist > testDist) nearestRwDist = testDist;
         if (nearestRwDist < 600) { //high tolerance since TDZ will often differ from the terrain display.
             return true
